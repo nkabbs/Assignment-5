@@ -82,12 +82,11 @@ class backgroundmusicDSL {
     }
   }
 
-  def StartCode(): Unit = {
-
+  def StartCode(code: String) {
+    println(code)
   }
 
-  def EndCode(): Unit = {
-
+  def EndCode() {
   }
   
 }

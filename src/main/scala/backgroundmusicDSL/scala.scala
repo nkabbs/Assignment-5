@@ -1,12 +1,9 @@
 package backgroundmusicDSL
 
-import scala.util.Random
-
 import java.io.File
-import com.sun.media.sound
-import javax.sound._
 import javax.sound.midi._
-import javax.sound.midi.Instrument._
+
+import scala.util.Random
 
 class backgroundmusicDSL {
   def hello : String = "Hello World!"
@@ -83,6 +80,14 @@ class backgroundmusicDSL {
       var volume = 100
       GenerateNote(note, start, duration, volume)
     }
+  }
+
+  def StartCode(): Unit = {
+
+  }
+
+  def EndCode(): Unit = {
+
   }
   
 }

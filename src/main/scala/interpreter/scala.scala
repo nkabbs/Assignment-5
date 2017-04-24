@@ -36,31 +36,47 @@ class interpreter extends Enumeration {
     if (x.equals(Major)) {
       InitializeMajor
     }
+    if (x.equals(Minor)) {
+      InitializeMajor   //obviously redundant, 
+    }
+    if (x.equals(Lydian)) {
+      InitializeMajor   //obviously redundant, 
+    }
   }
   
-  def revert(num : Int, range : Int) : Int = {
-    var i = 1
+  def revert(num : Int, size : Int) : Int = {  //given a number from 0 to n^2-1, creates a number between 0 and n 
+    var count = size
+    var rev = 0
+    while (num > count) {
+      rev += 1
+      count += size - rev
+    }
+    return rev
+    /*var i = 1
     var count = 0
     var retVal : Int = -1
+    
     while (retVal == -1) {
       if (num < i + count) {
         retVal = num - count
+        i -= 1
       }
       count += i
       i += 1
     }
     return i
+    * */
+   
   }
   
   def weightDistributor(size: Int, numNotes: Int): ArrayBuffer[Int] = {  //test size = 26, numNotes = 50... 
     var b = new ArrayBuffer[Int]()
     var i = 0
     var range : Int = (size + 1 + size%2) * (size / 2)// basically equals (size^2)/2... why?
-    print(range)
     var value = 0
     for (i <- 0 to numNotes - 1) {
-      value = revert(r.nextInt(range), range) - 2
-      println(value)
+      value = revert(r.nextInt(range), size) - 2
+      //println("size: " + size + "  range: " + range + "  val: " + value)
       b.append(value)
     }
     return b
@@ -158,9 +174,9 @@ class interpreter extends Enumeration {
   }
   
   def getNotes(value : Int) : (Int, ArrayBuffer[Int]) = {
-    var notes = getNote(value)
-    //duration is correlated to the frequency the note appears. 
-    var duration = n / (value + (n/numDurations - (n/numDurations) % value)) 
+    var notes = getNote(value/numDurations)
+    var duration = (Math.pow(.5, ((value + 1)/30).toInt) * 16).toInt
+    println(value/numDurations)
     if (duration == 0) {
       duration = 1
     }
@@ -168,7 +184,7 @@ class interpreter extends Enumeration {
   }
 
   def initializeIntervals() {
-    if (k == key.Major) {
+    if (k == key.Major || k == key.Minor || k == key.Lydian) {
       intervals(0) = (0,7)
       intervals(1) = (0,12)
       intervals(2) = (0,4)
@@ -182,7 +198,7 @@ class interpreter extends Enumeration {
   
   
   def initializeTriples() {
-    if (k == key.Major) {
+    if (k == key.Major || k == key.Minor || k == key.Lydian) {
       triples(0) = (0,4,7)
       triples(1) = (0,5,9)
       triples(2) = (2,7,11)
@@ -192,46 +208,31 @@ class interpreter extends Enumeration {
   }
   
    def initializeQuadruples() {
-    if (k == key.Major) {
+    if (k == key.Major || k == key.Minor || k == key.Lydian) {
       quadruples(0) = (0,4,7,11)
       quadruples(1) = (0,5,9,14)
     }
   }
   
-  def InitializeMajor() {
+  def InitializeMajor() {  //obviously these three methods are redundant, but it'll be nice to be able to mess with them later
     initializePitches
     initializeIntervals
     initializeTriples
     initializeQuadruples
-    /*
-    inter(0) = (0,4)
-    inter(1) = (7,4)
-    inter(2) = (12,4)
-    inter(3) = (19,4)
-    inter(4) = (5,4)
-    inter(5) = (4,4)
-    inter(6) = (2,4)
-    inter(7) = (9,4)
-    inter(8) = (11,4)
-    inter(9) = (0,2)
-    inter(10) = (7,2)
-    inter(11) = (12,2)
-    inter(12) = (19,2)
-    inter(13) = (5,2)
-    inter(14) = (4,2)
-    inter(15) = (2,2)
-    inter(16) = (9,2)
-    inter(17) = (11,2)
-    inter(18) = (0,1)
-    inter(19) = (7,1)
-    inter(20) = (12,1)
-    inter(21) = (19,1)
-    inter(22) = (5,1)
-    inter(23) = (4,1)
-    inter(24) = (2,1)
-    inter(25) = (9,1)
-    * 
-    */
+  }
+  
+  def InitializeMinor() {
+    initializePitches
+    initializeIntervals
+    initializeTriples
+    initializeQuadruples
+  }
+  
+  def InitializeLydian() {
+    initializePitches
+    initializeIntervals
+    initializeTriples
+    initializeQuadruples
   }
   
 }

@@ -2,14 +2,19 @@ package backgroundmusicDSL
 
 import java.io.File
 import javax.sound.midi._
-
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
+import interpreter.interpreter
+import interpreter.key
 
 class backgroundmusicDSL {
   def hello : String = "Hello World!"
   val random = new Random 
   
   val numSequences = 10
+  val numInterpreters = 5
+  
+  val interpreters = new Array[interpreter](numInterpreters)
   val s = new Array[Sequence](numSequences)
   val t = new Array[Track](numSequences)
   val curr = 0
@@ -23,7 +28,38 @@ class backgroundmusicDSL {
       t(i) = s(i).createTrack()
     }
   }
+  
+  
+  def InitializeInterpreters() {
+    /* INTERPRETER KEY:
+     * 0) Major
+     * 1) Minor
+     * 2) Dorian (Medieval)
+     * 3) Middle-Eastern (happy)
+     * 4) Middle-Eastern (sad)
+     */
+    
+    interpreters(0) = new interpreter
+    interpreters(0).initializeInterpreter(key.Minor)
+    var x : ArrayBuffer[Int] = interpreters(0).weightDistributor(150, 30)
+    InterpretCode(0, x)
+  }
 
+  def InterpretCode(interNum: Int, code: ArrayBuffer[Int]) {
+    var i = 0
+    var j = 0
+    var count = 0
+    val inter = interpreters(interNum)
+    var notes = new ArrayBuffer[Int]
+    for (i <- 0 to code.size - 1) {
+      notes = inter.getNotes(code(i))._2
+      for (j <- 0 to notes.size - 1) { 
+         GenerateNote(50 + notes(j),count,inter.getNotes(code(i))._1,100)
+      }
+      count += inter.getNotes(code(i))._1  
+    }
+  }
+  
   def BeginNote(msg: ShortMessage, start: Int, note: Int, volume: Int) {
         msg.setMessage(ShortMessage.NOTE_ON,0,note,volume)
         var event = new MidiEvent(msg,start)
@@ -47,6 +83,7 @@ class backgroundmusicDSL {
   
   def BeginSequence() {
       sequencer.open()
+      sequencer.setTempoFactor(4)
       sequencer.setSequence(s(curr))
       sequencer.start()
   }
@@ -71,7 +108,7 @@ class backgroundmusicDSL {
   def MakeSong() {
     // We'll need to edit this method heavily once we add the interpreters/clarify the structure
     var i = 0
-    var numNotes = 50
+    var numNotes = 30
     var x = 0
     for(x <- 0 to numNotes){
       var note = random.nextInt(3)*2 + 50
@@ -82,11 +119,12 @@ class backgroundmusicDSL {
     }
   }
 
-  def StartCode(code: String) {
-    println(code)
+  def StartCode(): Unit = {
+
   }
 
-  def EndCode() {
+  def EndCode(): Unit = {
+
   }
   
 }

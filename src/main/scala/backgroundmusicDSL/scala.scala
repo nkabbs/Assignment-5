@@ -6,12 +6,14 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import interpreter.interpreter
 import interpreter.key
+import scala.language.dynamics
+import scala.language.implicitConversions
 
 class backgroundmusicDSL {
   def hello : String = "Hello World!"
   val random = new Random 
   
-  val numSequences = 10
+  var numSequences = 10
   val numInterpreters = 5
   
   val interpreters = new Array[interpreter](numInterpreters)
@@ -21,13 +23,6 @@ class backgroundmusicDSL {
   
   var sequencer : Sequencer = MidiSystem.getSequencer()
   
-  def InitializeSequences() {
-    var i = 0
-    for (i <- 0 to numSequences - 1) {
-      s(i) = new Sequence(Sequence.PPQ, 1)
-      t(i) = s(i).createTrack()
-    }
-  }
   
   
   def InitializeInterpreters() {
@@ -125,6 +120,62 @@ class backgroundmusicDSL {
 
   def EndCode(): Unit = {
 
+  }
+  
+  class SongProperties() extends Dynamic {
+    
+  }
+  
+  object Initialize extends Dynamic {
+    var num = 0
+    def next(num : Int) = {
+      numSequences = num
+      
+      
+      InitializeGetter
+    }
+    
+    def as(st : String) {
+      if (st.equals("major")) {
+        interpreters(0).initializeInterpreter(key.Major)
+        var x : ArrayBuffer[Int] = interpreters(0).weightDistributor(150, 30)
+        InterpretCode(0, x)
+      }
+    }
+    
+    
+    
+  }
+  
+
+  object InitializeGetter {
+    def Interpreters(a : Any) = {
+      interpreters(0) = new interpreter
+        interpreters(0).initializeInterpreter(key.Major)
+        var x : ArrayBuffer[Int] = interpreters(0).weightDistributor(150, 30)
+        InterpretCode(0, x) 
+        KeyGetter
+    }
+    def sequences() = {
+      var i = 0
+      for (i <- 0 to numSequences - 1) {
+        s(i) = new Sequence(Sequence.PPQ, 1)
+        t(i) = s(i).createTrack()
+      }
+    }
+    
+  }
+  
+  object KeyGetter {
+    def as(s : String) {
+      if (s.equals("major")) {
+        interpreters(0).initializeInterpreter(key.Major)
+      } else if (s.equals("minor")) {
+        interpreters(0).initializeInterpreter(key.Minor)
+      } else if (s.equals("lydian")) {
+        interpreters(0).initializeInterpreter(key.Lydian)
+      }
+    }
   }
   
 }

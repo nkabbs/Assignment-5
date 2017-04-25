@@ -37,7 +37,7 @@ class interpreter extends Enumeration {
       InitializeMajor
     }
     if (x.equals(Minor)) {
-      InitializeMajor   //obviously redundant, 
+      InitializeMajor   //obviously redundant, but will 
     }
     if (x.equals(Lydian)) {
       InitializeMajor   //obviously redundant, 
@@ -76,7 +76,6 @@ class interpreter extends Enumeration {
     var value = 0
     for (i <- 0 to numNotes - 1) {
       value = revert(r.nextInt(range), size) - 2
-      //println("size: " + size + "  range: " + range + "  val: " + value)
       b.append(value)
     }
     return b

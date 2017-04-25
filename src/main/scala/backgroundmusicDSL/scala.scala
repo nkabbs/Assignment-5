@@ -177,5 +177,35 @@ class backgroundmusicDSL {
       }
     }
   }
-  
+
+  def parseFrequencies(code: String): collection.mutable.HashMap[Char,Int] = {
+    import collection.mutable.HashMap
+    val frequency_map = new HashMap[Char,Int]()  { override def default(key:Char) = 0 }
+    for (x <- 0 to code.length) {
+      frequency_map += (code.charAt(x) -> (frequency_map(code.charAt(x)) + 1))
+    }
+    return frequency_map
+  }
+
+  class Node{
+    /* Will be the class that is used to build up tree
+    *
+    * var left_node : Node
+    * var right_node : Node
+    * var value : Char
+    * var encoding : String
+    *
+    * */
+  }
+
+  object minOrder extends Ordering[(Node,Char)] {
+    import scala.math.Ordered.orderingToOrdered
+    def compare(that:(Node, Char)): Int = (that._1, that._2) compare (this._1, this._2)
+  }
+
+
+  def buildHeap (map : collection.mutable.HashMap[Char,Int]) : collection.mutable.PriorityQueue[(Node,Char)] = {
+    val minHeap = collection.mutable.PriorityQueue.empty(minOrder)
+  }
+
 }

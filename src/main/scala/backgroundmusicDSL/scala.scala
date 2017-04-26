@@ -8,6 +8,7 @@ import interpreter.{interpreter, key}
 import scala.collection.mutable.ArrayBuffer
 import scala.language.{dynamics, implicitConversions}
 import scala.util.Random
+import collection.mutable.HashMap
 
 class backgroundmusicDSL {
   val random = new Random
@@ -119,11 +120,16 @@ class backgroundmusicDSL {
   }
 
   def StartCode(code:String) = {
+
     val hashMap : collection.mutable.HashMap[Char, Int] = parseFrequencies(code)
     val minHeap : collection.mutable.PriorityQueue[(Int, Node)] = buildHeap(hashMap)
-    var root : Node = buildTree(minHeap)
+    val root : Node = buildTree(minHeap)
     fillEncoding(root)
     printTree(root)
+    val encodingMap : collection.mutable.HashMap[Char, String] = getEncodingHashMap(root)
+    val byteString : String = getByteString(code, encodingMap)
+    val byteArray  : Array[Byte] = convertStreamToByteArray(byteString)
+
   }
 
   def EndCode(): Unit = {
@@ -189,12 +195,13 @@ class backgroundmusicDSL {
   }
 
   def parseFrequencies(code: String): collection.mutable.HashMap[Char,Int] = {
-    import collection.mutable.HashMap
-    val frequency_map = new HashMap[Char,Int]()  { override def default(key:Char) = 0 }
-    for (x <- 0 to code.length - 1) {
+
+    val frequency_map = new collection.mutable.HashMap[Char,Int]()  { override def default(key:Char) = 0 }
+    for (x <- 0 until code.length) {
       frequency_map += (code.charAt(x) -> (frequency_map(code.charAt(x)) + 1))
     }
-    return frequency_map
+    frequency_map
+
   }
 
   class Node (v: Int, c: Char, l: Node, r: Node) {
@@ -257,6 +264,57 @@ class backgroundmusicDSL {
 
   }
 
+  def encodingHashMapHelper (n:Node, h: collection.mutable.HashMap[Char, String]): Unit = {
+
+    if (n.l_node == null && n.r_node == null) {
+      h += (n.char -> n.encoding)
+    } else if (n.l_node != null && n.r_node != null) {
+      encodingHashMapHelper(n.l_node, h)
+      encodingHashMapHelper(n.r_node, h)
+    } else if (n.l_node != null) {
+      encodingHashMapHelper(n.l_node, h)
+    } else if (n.r_node != null) {
+      encodingHashMapHelper(n.r_node, h)
+    }
+
+
+  }
+
+  def getEncodingHashMap (n: Node) : collection.mutable.HashMap[Char, String] = {
+    val encoding_map = new collection.mutable.HashMap[Char,String]()
+    encodingHashMapHelper(n, encoding_map)
+    encoding_map
+  }
+
+  def getByteString (code: String, h: collection.mutable.HashMap[Char, String]) : String = {
+
+    var byteStringBuilder = ""
+    for (x<-0 until code.length) {
+      byteStringBuilder += h(code(x))
+    }
+    byteStringBuilder
+
+  }
+
+  def convertStreamToByteArray (s: String): Array[Byte] = {
+
+    var byteArray = new Array[Byte](s.length/8 + 1)
+    for {i<-0 until s.length if (i % 8 == 0)} {
+      var newByte : Int = 0
+      for {j<-0 until 7 if (7-j)+i < s.length} {
+        val c : Char = s(i+(7-j))
+        val cValue: Int = c.asDigit
+        val exponent: Int = scala.math.pow(2, j).asInstanceOf[Int]
+        println("CVALUE: " + cValue + " EXPONENT: " + exponent)
+        newByte += cValue * exponent
+      }
+      byteArray(i/8) = newByte.asInstanceOf[Byte]
+      println(byteArray(i/8))
+    }
+    byteArray
+
+  }
+
   def printTree (n: Node) : Unit = {
     if (n != null) {
       printTree(n.l_node)
@@ -264,6 +322,8 @@ class backgroundmusicDSL {
       printTree(n.r_node)
     }
   }
+
+
 
 
 

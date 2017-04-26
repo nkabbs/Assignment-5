@@ -193,7 +193,7 @@ class backgroundmusicDSL {
     return frequency_map
   }
 
-  class Node{
+  class Node (v: Int, c: Char, l: Node, r: Node) {
     /* Will be the class that is used to build up tree
     *
     * var left_node : Node
@@ -202,15 +202,56 @@ class backgroundmusicDSL {
     * var encoding : String
     *
     * */
+    val l_node : Node = l
+    val r_node : Node = r
+    val char : Char = c
+    val value : Int = v
+    var encoding : String = _
+
   }
 
-  object minOrder extends Ordering[(Node,Char)] {
-    def compare(that:(Node, Char)): Int = (that._1, that._2) compare (this._1, this._2)
+  def buildHeap (map : collection.mutable.HashMap[Char,Int]) : collection.mutable.PriorityQueue[(Int,Node)] = {
+    val minHeap = collection.mutable.PriorityQueue.empty(Ordering.by((_: (Int, Node))._1).reverse)
+    for (x <- map.keySet.iterator) {
+      val value : Int = map(x)
+      val node : Node = new Node(value, x, null, null)
+      minHeap += Tuple2(value, node)
+    }
+    minHeap
   }
 
-
-  def buildHeap (map : collection.mutable.HashMap[Char,Int]) : collection.mutable.PriorityQueue[(Node,Char)] = {
-    val minHeap = collection.mutable.PriorityQueue.empty(minOrder)
+  def buildTree (heap : collection.mutable.PriorityQueue[(Int, Node)]) : Node = {
+    while (heap.length != 1) {
+      val first: (Int, Node) = heap.dequeue()
+      val second: (Int, Node) = heap.dequeue()
+      val newValue: Int = first._1 + second._1
+      val newNode: Node = new Node(newValue, null, second._2, first._2)
+      heap += Tuple2(newValue, newNode)
+    }
+    val root : Node = heap.dequeue()._2
+    root.encoding = ""
+    root
   }
 
+//  def fillEncodingHelper (n: Node) : Unit = {
+//
+//  }
+
+  def fillEncoding (n: Node) : Unit = {
+
+    if (n.l_node == null && n.r_node == null) {
+    } else if (n.l_node != null) {
+      n.l_node.encoding = n.encoding + "0"
+      fillEncoding(n.l_node)
+    } else if (n.r_node != null) {
+      n.r_node.encoding = n.encoding + "1"
+      fillEncoding(n.r_node)
+    } else {
+      n.l_node.encoding = n.encoding + "0"
+      fillEncoding(n.l_node)
+      n.r_node.encoding = n.encoding + "1"
+      fillEncoding(n.r_node)
+    }
+
+  }
 }

@@ -146,7 +146,7 @@ class backgroundmusicDSL {
   }
 
   object Initialize extends Dynamic {
-    var num = 0Now
+    var num = 0
     def next(num : Int) = {
       numSequences = num
 

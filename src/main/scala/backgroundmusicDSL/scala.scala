@@ -1,6 +1,6 @@
 package backgroundmusicDSL
 
-import java.io.File
+import java.io.{BufferedOutputStream, File, FileOutputStream}
 import javax.sound.midi._
 
 import interpreter.{interpreter, key}
@@ -12,19 +12,19 @@ import collection.mutable.HashMap
 
 class backgroundmusicDSL {
   val random = new Random
-  
+
   var numSequences = 10
   val numInterpreters = 5
-  
+
   val interpreters = new Array[interpreter](numInterpreters)
   val s = new Array[Sequence](numSequences)
   val t = new Array[Track](numSequences)
   val curr = 0
-  
+
   var sequencer : Sequencer = MidiSystem.getSequencer()
-  
-  
-  
+
+
+
   def InitializeInterpreters() {
     /* INTERPRETER KEY:
      * 0) Major
@@ -33,7 +33,7 @@ class backgroundmusicDSL {
      * 3) Middle-Eastern (happy)
      * 4) Middle-Eastern (sad)
      */
-    
+
     interpreters(0) = new interpreter
     interpreters(0).initializeInterpreter(key.Minor)
     var x : ArrayBuffer[Int] = interpreters(0).weightDistributor(150, 30)
@@ -53,45 +53,45 @@ class backgroundmusicDSL {
     var notes = new ArrayBuffer[Int]
     for (i <- 0 to code.size - 1) {
       notes = inter.getNotes(code(i))._2
-      for (j <- 0 to notes.size - 1) { 
+      for (j <- 0 to notes.size - 1) {
          GenerateNote(50 + notes(j),count,inter.getNotes(code(i))._1,100)
       }
-      count += inter.getNotes(code(i))._1  
+      count += inter.getNotes(code(i))._1
     }
   }
-  
+
   def BeginNote(msg: ShortMessage, start: Int, note: Int, volume: Int) {
         msg.setMessage(ShortMessage.NOTE_ON,0,note,volume)
         var event = new MidiEvent(msg,start)
         t(curr).add(event)
   }
-  
+
   def EndNote(msg: ShortMessage, note: Int, end: Int) {
         msg.setMessage(ShortMessage.NOTE_OFF,0,note)
         var event = new MidiEvent(msg, end)
         t(curr).add(event)
   }
-  
+
   def GenerateNote(note: Int, start: Int, duration: Int, volume: Int) {
-        
+
         var beg = new ShortMessage()
         BeginNote(beg, start, note, volume)
 
         var end = new ShortMessage()
         EndNote(end, note, start + duration)
   }
-  
+
   def BeginSequence() {
       sequencer.open()
       sequencer.setTempoFactor(4)
       sequencer.setSequence(s(curr))
       sequencer.start()
   }
-  
+
   def EndSequence() {
       sequencer.close()
   }
-  
+
   def PlaySong() {
       BeginSequence
       while(sequencer.isRunning()){
@@ -99,12 +99,12 @@ class backgroundmusicDSL {
       }
       EndSequence
   }
-  
+
   def SaveSong() {
      val song = new File("song.midi")
      MidiSystem.write(s(curr), 0, song)
    }
-  
+
   def MakeSong() {
     // We'll need to edit this method heavily once we add the interpreters/clarify the structure
     var i = 0
@@ -129,6 +129,9 @@ class backgroundmusicDSL {
     val encodingMap : collection.mutable.HashMap[Char, String] = getEncodingHashMap(root)
     val byteString : String = getByteString(code, encodingMap)
     val byteArray  : Array[Byte] = convertStreamToByteArray(byteString)
+    val bos : BufferedOutputStream = new BufferedOutputStream(new FileOutputStream("encoded.huff "))
+    bos.write(byteArray)
+    bos.close()
 
   }
 
@@ -137,20 +140,20 @@ class backgroundmusicDSL {
 //    var arrayBufferFromTree = generateFrequencyArray();
 //    InterpretCode(0, code)
   }
-  
+
   class SongProperties() extends Dynamic {
-    
+
   }
-  
+
   object Initialize extends Dynamic {
-    var num = 0
+    var num = 0Now
     def next(num : Int) = {
       numSequences = num
-      
-      
+
+
       InitializeGetter
     }
-    
+
     def as(st : String) {
       if (st.equals("major")) {
         interpreters(0).initializeInterpreter(key.Major)
@@ -158,18 +161,18 @@ class backgroundmusicDSL {
         InterpretCode(0, x)
       }
     }
-    
-    
-    
+
+
+
   }
-  
+
 
   object InitializeGetter {
     def Interpreters(a : Any) = {
       interpreters(0) = new interpreter
         interpreters(0).initializeInterpreter(key.Major)
         var x : ArrayBuffer[Int] = interpreters(0).weightDistributor(150, 30)
-        InterpretCode(0, x) 
+        InterpretCode(0, x)
         KeyGetter
     }
     def sequences() = {
@@ -179,9 +182,9 @@ class backgroundmusicDSL {
         t(i) = s(i).createTrack()
       }
     }
-    
+
   }
-  
+
   object KeyGetter {
     def as(s : String) {
       if (s.equals("major")) {
@@ -301,7 +304,7 @@ class backgroundmusicDSL {
     var byteArray = new Array[Byte](s.length/8 + 1)
     for {i<-0 until s.length if (i % 8 == 0)} {
       var newByte : Int = 0
-      for {j<-0 until 7 if (7-j)+i < s.length} {
+      for {j<-0 until 8 if (7-j)+i < s.length} {
         val c : Char = s(i+(7-j))
         val cValue: Int = c.asDigit
         val exponent: Int = scala.math.pow(2, j).asInstanceOf[Int]

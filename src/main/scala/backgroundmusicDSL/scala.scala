@@ -2,12 +2,12 @@ package backgroundmusicDSL
 
 import java.io.File
 import javax.sound.midi._
+
+import interpreter.{interpreter, key}
+
 import scala.collection.mutable.ArrayBuffer
+import scala.language.{dynamics, implicitConversions}
 import scala.util.Random
-import interpreter.interpreter
-import interpreter.key
-import scala.language.dynamics
-import scala.language.implicitConversions
 
 class backgroundmusicDSL {
   def hello : String = "Hello World!"
@@ -114,8 +114,8 @@ class backgroundmusicDSL {
     }
   }
 
-  def StartCode(): Unit = {
-
+  def StartCode(code:String) = {
+    var hashMap = parseFrequencies(code)
   }
 
   def EndCode(): Unit = {
@@ -199,7 +199,6 @@ class backgroundmusicDSL {
   }
 
   object minOrder extends Ordering[(Node,Char)] {
-    import scala.math.Ordered.orderingToOrdered
     def compare(that:(Node, Char)): Int = (that._1, that._2) compare (this._1, this._2)
   }
 

@@ -119,7 +119,11 @@ class backgroundmusicDSL {
   }
 
   def StartCode(code:String) = {
-    var hashMap = parseFrequencies(code)
+    val hashMap : collection.mutable.HashMap[Char, Int] = parseFrequencies(code)
+    val minHeap : collection.mutable.PriorityQueue[(Int, Node)] = buildHeap(hashMap)
+    var root : Node = buildTree(minHeap)
+    fillEncoding(root)
+    printTree(root)
   }
 
   def EndCode(): Unit = {
@@ -187,7 +191,7 @@ class backgroundmusicDSL {
   def parseFrequencies(code: String): collection.mutable.HashMap[Char,Int] = {
     import collection.mutable.HashMap
     val frequency_map = new HashMap[Char,Int]()  { override def default(key:Char) = 0 }
-    for (x <- 0 to code.length) {
+    for (x <- 0 to code.length - 1) {
       frequency_map += (code.charAt(x) -> (frequency_map(code.charAt(x)) + 1))
     }
     return frequency_map
@@ -225,7 +229,7 @@ class backgroundmusicDSL {
       val first: (Int, Node) = heap.dequeue()
       val second: (Int, Node) = heap.dequeue()
       val newValue: Int = first._1 + second._1
-      val newNode: Node = new Node(newValue, null, second._2, first._2)
+      val newNode: Node = new Node(newValue, Char.MinValue, second._2, first._2)
       heap += Tuple2(newValue, newNode)
     }
     val root : Node = heap.dequeue()._2
@@ -233,20 +237,18 @@ class backgroundmusicDSL {
     root
   }
 
-//  def fillEncodingHelper (n: Node) : Unit = {
-//
-//  }
 
   def fillEncoding (n: Node) : Unit = {
 
-    if (n.l_node == null && n.r_node == null) {
-    } else if (n.l_node != null) {
+    if (n.l_node != null && n.r_node == null) {
       n.l_node.encoding = n.encoding + "0"
       fillEncoding(n.l_node)
-    } else if (n.r_node != null) {
+    }
+    if (n.l_node == null && n.r_node != null) {
       n.r_node.encoding = n.encoding + "1"
       fillEncoding(n.r_node)
-    } else {
+    }
+    if (n.r_node != null && n.l_node != null) {
       n.l_node.encoding = n.encoding + "0"
       fillEncoding(n.l_node)
       n.r_node.encoding = n.encoding + "1"
@@ -254,4 +256,15 @@ class backgroundmusicDSL {
     }
 
   }
+
+  def printTree (n: Node) : Unit = {
+    if (n != null) {
+      printTree(n.l_node)
+      print(n.char + ": " + n.encoding + "\n")
+      printTree(n.r_node)
+    }
+  }
+
+
+
 }

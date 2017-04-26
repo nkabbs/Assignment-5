@@ -137,7 +137,8 @@ class backgroundmusicDSL {
 
   def EndCode(): Unit = {
     // hand nick a list of frequencies in an array
-//    var arrayBufferFromTree = generateFrequencyArray();
+    val hashMap : collection.mutable.HashMap[Char, Int] = parseFrequencies(code)
+    buildFrequencyRanking(hashMap) // Transforms it into a ranking not an absolute
 //    InterpretCode(0, code)
   }
 
@@ -161,8 +162,6 @@ class backgroundmusicDSL {
         InterpretCode(0, x)
       }
     }
-
-
 
   }
 
@@ -232,6 +231,20 @@ class backgroundmusicDSL {
       minHeap += Tuple2(value, node)
     }
     minHeap
+  }
+
+  def buildFrequencyRanking(map : collection.mutable.HashMap[Char, Int]) : Unit = {
+    val maxHeap = collection.mutable.PriorityQueue.empty(Ordering.by((_: (Int, Char))._1))
+    for (x <- map.keySet.iterator) {
+      val value : Int = map(x)
+      maxHeap += Tuple2(value, x)
+    }
+    var rank : Int = 1
+    while (!maxHeap.isEmpty) {
+      val tup = maxHeap.dequeue()
+      map += Tuple2(tup._2, rank)
+      rank += 1
+    }
   }
 
   def buildTree (heap : collection.mutable.PriorityQueue[(Int, Node)]) : Node = {
@@ -325,8 +338,6 @@ class backgroundmusicDSL {
       printTree(n.r_node)
     }
   }
-
-
 
 
 

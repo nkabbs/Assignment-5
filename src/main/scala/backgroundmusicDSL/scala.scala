@@ -10,8 +10,7 @@ import scala.language.{dynamics, implicitConversions}
 import scala.util.Random
 
 class backgroundmusicDSL {
-  def hello : String = "Hello World!"
-  val random = new Random 
+  val random = new Random
   
   var numSequences = 10
   val numInterpreters = 5
@@ -40,6 +39,11 @@ class backgroundmusicDSL {
     InterpretCode(0, x)
   }
 
+  /*
+    This function applys the scales to the code
+      interNum is the interpritor key
+      code is the array of frequencies in order
+   */
   def InterpretCode(interNum: Int, code: ArrayBuffer[Int]) {
     var i = 0
     var j = 0
@@ -119,7 +123,9 @@ class backgroundmusicDSL {
   }
 
   def EndCode(): Unit = {
-
+    // hand nick a list of frequencies in an array
+//    var arrayBufferFromTree = generateFrequencyArray();
+//    InterpretCode(0, code)
   }
   
   class SongProperties() extends Dynamic {

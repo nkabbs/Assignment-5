@@ -4,7 +4,9 @@ object backgroundmusicrunner extends backgroundmusicDSL {
   def main(args: Array[String]): Unit = {
     Initialize next 3 sequences; 
     Initialize next 1 Interpreters 0 as "lydian";
-    StartCode("var x = 0; x += 23; return x;")
+    StartCode(
+      "var x = 0; x += 23; return x"
+    )
     EndCode
     //Initialize a set of 3 sequences;
     //Initialize an interpreter using the lydian setting;

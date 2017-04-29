@@ -8,7 +8,6 @@ import interpreter.{interpreter, key}
 import scala.collection.mutable.ArrayBuffer
 import scala.language.{dynamics, implicitConversions}
 import scala.util.Random
-import collection.mutable.HashMap
 
 class backgroundmusicDSL {
   val random = new Random
@@ -20,6 +19,7 @@ class backgroundmusicDSL {
   val s = new Array[Sequence](numSequences)
   val t = new Array[Track](numSequences)
   val curr = 0
+  var code = ""
 
   var sequencer : Sequencer = MidiSystem.getSequencer()
 
@@ -37,7 +37,7 @@ class backgroundmusicDSL {
     interpreters(0) = new interpreter
     interpreters(0).initializeInterpreter(key.Minor)
     var x : ArrayBuffer[Int] = interpreters(0).weightDistributor(150, 30)
-    InterpretCode(0, x)
+//    InterpretCode(0, x)
   }
 
   /*
@@ -119,27 +119,26 @@ class backgroundmusicDSL {
     }
   }
 
-  def StartCode(code:String) = {
-
+  def StartCode(inputCode:String) = {
+    code = inputCode
     val hashMap : collection.mutable.HashMap[Char, Int] = parseFrequencies(code)
     val minHeap : collection.mutable.PriorityQueue[(Int, Node)] = buildHeap(hashMap)
     val root : Node = buildTree(minHeap)
     fillEncoding(root)
-    printTree(root)
+//    printTree(root)
     val encodingMap : collection.mutable.HashMap[Char, String] = getEncodingHashMap(root)
     val byteString : String = getByteString(code, encodingMap)
     val byteArray  : Array[Byte] = convertStreamToByteArray(byteString)
-    val bos : BufferedOutputStream = new BufferedOutputStream(new FileOutputStream("encoded.huff "))
+    val bos : BufferedOutputStream = new BufferedOutputStream(new FileOutputStream("encoded.txt"))
     bos.write(byteArray)
     bos.close()
-
   }
 
   def EndCode(): Unit = {
-    // hand nick a list of frequencies in an array
     val hashMap : collection.mutable.HashMap[Char, Int] = parseFrequencies(code)
-    buildFrequencyRanking(hashMap) // Transforms it into a ranking not an absolute
-//    InterpretCode(0, code)
+    // Use hashmap to generate ordered array from most popular to least
+    val freqArr : ArrayBuffer[Int] = buildFrequencyArr(hashMap)
+    InterpretCode(0, freqArr)
   }
 
   class SongProperties() extends Dynamic {
@@ -159,7 +158,7 @@ class backgroundmusicDSL {
       if (st.equals("major")) {
         interpreters(0).initializeInterpreter(key.Major)
         var x : ArrayBuffer[Int] = interpreters(0).weightDistributor(150, 30)
-        InterpretCode(0, x)
+//        InterpretCode(0, x)
       }
     }
 
@@ -171,7 +170,7 @@ class backgroundmusicDSL {
       interpreters(0) = new interpreter
         interpreters(0).initializeInterpreter(key.Major)
         var x : ArrayBuffer[Int] = interpreters(0).weightDistributor(150, 30)
-        InterpretCode(0, x)
+//        InterpretCode(0, x)
         KeyGetter
     }
     def sequences() = {
@@ -231,6 +230,15 @@ class backgroundmusicDSL {
       minHeap += Tuple2(value, node)
     }
     minHeap
+  }
+
+  def buildFrequencyArr(map : collection.mutable.HashMap[Char, Int]) : ArrayBuffer[Int] = {
+    var freqArr = ArrayBuffer[Int]()
+    for (x <- map.keySet.iterator) {
+      val value : Int = map(x)
+      freqArr += value
+    }
+    freqArr.sorted
   }
 
   def buildFrequencyRanking(map : collection.mutable.HashMap[Char, Int]) : Unit = {
@@ -321,11 +329,9 @@ class backgroundmusicDSL {
         val c : Char = s(i+(7-j))
         val cValue: Int = c.asDigit
         val exponent: Int = scala.math.pow(2, j).asInstanceOf[Int]
-        println("CVALUE: " + cValue + " EXPONENT: " + exponent)
         newByte += cValue * exponent
       }
       byteArray(i/8) = newByte.asInstanceOf[Byte]
-      println(byteArray(i/8))
     }
     byteArray
 

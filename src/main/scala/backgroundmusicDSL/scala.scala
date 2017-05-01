@@ -1,5 +1,6 @@
 package backgroundmusicDSL
 
+import words._
 import java.io.{BufferedOutputStream, File, FileOutputStream}
 import javax.sound.midi._
 
@@ -8,103 +9,104 @@ import interpreter.{interpreter, key}
 import scala.collection.mutable.ArrayBuffer
 import scala.language.{dynamics, implicitConversions}
 import scala.util.Random
+import collection.mutable.HashMap
 
 class backgroundmusicDSL {
-  val random = new Random
-
+  def hello : String = "Hello World!"
+  val random = new Random 
+  
   var numSequences = 10
-  val numInterpreters = 5
-
-  val interpreters = new Array[interpreter](numInterpreters)
+  val numKeys = 5
+  
+  val interps = new Array[interpreter](numKeys)
   val s = new Array[Sequence](numSequences)
   val t = new Array[Track](numSequences)
   val curr = 0
-  var code = ""
-
+  var currInt = 0
+  
   var sequencer : Sequencer = MidiSystem.getSequencer()
-
-
-
-  def InitializeInterpreters() {
+  
+  
     /* INTERPRETER KEY:
      * 0) Major
      * 1) Minor
-     * 2) Dorian (Medieval)
-     * 3) Middle-Eastern (happy)
-     * 4) Middle-Eastern (sad)
+     * 2) Lydian
+     * 3) Dorian (Medieval)
+     * 4) Middle-Eastern (happy)
      */
-
-    interpreters(0) = new interpreter
-    interpreters(0).initializeInterpreter(key.Minor)
-    var x : ArrayBuffer[Int] = interpreters(0).weightDistributor(150, 30)
-//    InterpretCode(0, x)
-  }
-
-  /*
-    This function applys the scales to the code
-      interNum is the interpritor key
-      code is the array of frequencies in order
-   */
-  def InterpretCode(interNum: Int, code: ArrayBuffer[Int]) {
+  
+  def InitializeInterpreters() {
     var i = 0
-    var j = 0
-    var count = 0
-    val inter = interpreters(interNum)
-    var notes = new ArrayBuffer[Int]
-    for (i <- 0 to code.size - 1) {
-      notes = inter.getNotes(code(i))._2
-      for (j <- 0 to notes.size - 1) {
-         GenerateNote(50 + notes(j),count,inter.getNotes(code(i))._1,100)
-      }
-      count += inter.getNotes(code(i))._1
+    for (i <- 0 until numKeys) {
+      interps(i) = new interpreter
+      interps(i).initializeInterpreter(i)
     }
   }
 
-  def BeginNote(msg: ShortMessage, start: Int, note: Int, volume: Int) {
+  def InterpretCode(interNum: Int, code: ArrayBuffer[Int], trackNum : Int) {  //code passed in is frequency distribution
+    var i = 0
+    var j = 0
+    var count = 0
+    val inter = interps(interNum)
+    var notes = new ArrayBuffer[Int]
+    for (i <- 0 to code.size - 1) {
+      notes = inter.getNotes(code(i))._2  
+      print("code: " + code(i))
+      print("  notes: ")
+      for (j <- 0 to notes.size - 1) { 
+        print(notes(j) + " ")
+         GenerateNote(50 + notes(j),count,inter.getNotes(code(i))._1,100, trackNum)
+      }
+     println()
+      count += inter.getNotes(code(i))._1  
+    }
+  }
+  
+  def BeginNote(msg: ShortMessage, start: Int, note: Int, volume: Int, track : Int) {
         msg.setMessage(ShortMessage.NOTE_ON,0,note,volume)
         var event = new MidiEvent(msg,start)
-        t(curr).add(event)
+        t(track).add(event)
   }
-
-  def EndNote(msg: ShortMessage, note: Int, end: Int) {
+  
+  def EndNote(msg: ShortMessage, note: Int, end: Int, track : Int) {
         msg.setMessage(ShortMessage.NOTE_OFF,0,note)
         var event = new MidiEvent(msg, end)
-        t(curr).add(event)
+        t(track).add(event)
   }
-
-  def GenerateNote(note: Int, start: Int, duration: Int, volume: Int) {
-
+  
+  def GenerateNote(note: Int, start: Int, duration: Int, volume: Int, track : Int) {
+        
         var beg = new ShortMessage()
-        BeginNote(beg, start, note, volume)
+        BeginNote(beg, start, note, volume, track)
 
         var end = new ShortMessage()
-        EndNote(end, note, start + duration)
+        EndNote(end, note, start + duration, track)
   }
-
-  def BeginSequence() {
+  
+  def BeginSequence(x : Int) {
       sequencer.open()
-      sequencer.setTempoFactor(4)
-      sequencer.setSequence(s(curr))
+      sequencer.setTempoFactor(20)
+      sequencer.setSequence(s(x))
       sequencer.start()
   }
-
+  
   def EndSequence() {
       sequencer.close()
   }
-
-  def PlaySong() {
-      BeginSequence
+  
+  def PlaySong(x : Int) {
+      BeginSequence(x)
       while(sequencer.isRunning()){
-        Thread.sleep(1)
+        Thread.sleep(2000)
       }
       EndSequence
   }
-
+  
   def SaveSong() {
      val song = new File("song.midi")
      MidiSystem.write(s(curr), 0, song)
    }
-
+  
   def MakeSong() {
     // We'll need to edit this method heavily once we add the interpreters/clarify the structure
     var i = 0
@@ -115,86 +117,111 @@ class backgroundmusicDSL {
       var start = random.nextInt(numNotes) + i
       var duration = random.nextInt(numNotes - start) + 1
       var volume = 100
-      GenerateNote(note, start, duration, volume)
+      GenerateNote(note, start, duration, volume, 0)
     }
   }
 
-  def StartCode(inputCode:String) = {
-    code = inputCode
+  def generateSongCode(code : String, map : HashMap[Char, Int]) : ArrayBuffer[Int] = {
+    var i = 0
+    var songCode = new ArrayBuffer[Int]
+    for (i <- 0 until code.length()) {
+      songCode.append(map.getOrElse(code(i),0))
+    }
+    return songCode
+  }
+  
+  def buildFrequencyArr(map : collection.mutable.HashMap[Char, Int]) : ArrayBuffer[Int] = {
+    var freqArr = ArrayBuffer[Int]()
+    for (x <- map.keySet.iterator) {
+      val value : Int = map(x)
+      freqArr += value
+    }
+    freqArr.sorted
+  }
+  
+  
+  def StartCode(code:String) : ArrayBuffer[Int] = {
+
     val hashMap : collection.mutable.HashMap[Char, Int] = parseFrequencies(code)
     val minHeap : collection.mutable.PriorityQueue[(Int, Node)] = buildHeap(hashMap)
     val root : Node = buildTree(minHeap)
     fillEncoding(root)
-//    printTree(root)
+    //printTree(root)
     val encodingMap : collection.mutable.HashMap[Char, String] = getEncodingHashMap(root)
     val byteString : String = getByteString(code, encodingMap)
     val byteArray  : Array[Byte] = convertStreamToByteArray(byteString)
-    val bos : BufferedOutputStream = new BufferedOutputStream(new FileOutputStream("encoded.txt"))
+    val bos : BufferedOutputStream = new BufferedOutputStream(new FileOutputStream("encoded.huff "))
     bos.write(byteArray)
     bos.close()
+    buildFrequencyRanking(hashMap)
+    return generateSongCode(code, hashMap);
   }
+
 
   def EndCode(): Unit = {
-    val hashMap : collection.mutable.HashMap[Char, Int] = parseFrequencies(code)
-    // Use hashmap to generate ordered array from most popular to least
-    val freqArr : ArrayBuffer[Int] = buildFrequencyArr(hashMap)
-    InterpretCode(0, freqArr)
+    // hand nick a list of frequencies in an array
+    //val hashMap : collection.mutable.HashMap[Char, Int] = parseFrequencies(code)
+    //buildFrequencyRanking(hashMap) // Transforms it into a ranking not an absolute
+//    InterpretCode(0, code)
+  
   }
-
-  class SongProperties() extends Dynamic {
-
+  
+  def buildFrequencyRanking(map : HashMap[Char, Int]) : Unit = {
+    val maxHeap = collection.mutable.PriorityQueue.empty(Ordering.by((_: (Int, Char))._1))
+    for (x <- map.keySet.iterator) {
+      val value : Int = map(x)
+      maxHeap += Tuple2(value, x)
+    }
+    var rank : Int = 0;
+    while (!maxHeap.isEmpty) {
+      val tup = maxHeap.dequeue()
+      map += Tuple2(tup._2, rank)
+      rank += 1
+    }
   }
-
+  
+  
   object Initialize extends Dynamic {
     var num = 0
-    def next(num : Int) = {
+    def apply(num : Int) = {
       numSequences = num
-
-
-      InitializeGetter
     }
-
-    def as(st : String) {
-      if (st.equals("major")) {
-        interpreters(0).initializeInterpreter(key.Major)
-        var x : ArrayBuffer[Int] = interpreters(0).weightDistributor(150, 30)
-//        InterpretCode(0, x)
-      }
+    
+    
+    def tracks(i : Int) = {
+      currInt = i
+      trackInitializer
+      
     }
-
+    
+    def the(v : interpretersWord) = InitializeInterpreters
+    
   }
-
-
-  object InitializeGetter {
-    def Interpreters(a : Any) = {
-      interpreters(0) = new interpreter
-        interpreters(0).initializeInterpreter(key.Major)
-        var x : ArrayBuffer[Int] = interpreters(0).weightDistributor(150, 30)
-//        InterpretCode(0, x)
-        KeyGetter
-    }
-    def sequences() = {
-      var i = 0
-      for (i <- 0 to numSequences - 1) {
+  
+  object trackInitializer {
+    def to(j: Int)  {
+      
+    for (i <- currInt to j) {
         s(i) = new Sequence(Sequence.PPQ, 1)
         t(i) = s(i).createTrack()
       }
     }
-
   }
+  
 
+  
   object KeyGetter {
     def as(s : String) {
       if (s.equals("major")) {
-        interpreters(0).initializeInterpreter(key.Major)
+        interps(0).initializeInterpreter(0)
       } else if (s.equals("minor")) {
-        interpreters(0).initializeInterpreter(key.Minor)
+        interps(0).initializeInterpreter(1)
       } else if (s.equals("lydian")) {
-        interpreters(0).initializeInterpreter(key.Lydian)
+        interps(0).initializeInterpreter(2)
       }
     }
   }
-
+  
   def parseFrequencies(code: String): collection.mutable.HashMap[Char,Int] = {
 
     val frequency_map = new collection.mutable.HashMap[Char,Int]()  { override def default(key:Char) = 0 }
@@ -230,29 +257,6 @@ class backgroundmusicDSL {
       minHeap += Tuple2(value, node)
     }
     minHeap
-  }
-
-  def buildFrequencyArr(map : collection.mutable.HashMap[Char, Int]) : ArrayBuffer[Int] = {
-    var freqArr = ArrayBuffer[Int]()
-    for (x <- map.keySet.iterator) {
-      val value : Int = map(x)
-      freqArr += value
-    }
-    freqArr.sorted
-  }
-
-  def buildFrequencyRanking(map : collection.mutable.HashMap[Char, Int]) : Unit = {
-    val maxHeap = collection.mutable.PriorityQueue.empty(Ordering.by((_: (Int, Char))._1))
-    for (x <- map.keySet.iterator) {
-      val value : Int = map(x)
-      maxHeap += Tuple2(value, x)
-    }
-    var rank : Int = 1
-    while (!maxHeap.isEmpty) {
-      val tup = maxHeap.dequeue()
-      map += Tuple2(tup._2, rank)
-      rank += 1
-    }
   }
 
   def buildTree (heap : collection.mutable.PriorityQueue[(Int, Node)]) : Node = {
@@ -347,4 +351,5 @@ class backgroundmusicDSL {
 
 
 
+  
 }

@@ -23,6 +23,7 @@ class backgroundmusicDSL {
   val t = new Array[Track](numSequences)
   val curr = 0
   var currInt = 0
+  var code = ""
   
   var sequencer : Sequencer = MidiSystem.getSequencer()
   
@@ -140,8 +141,8 @@ class backgroundmusicDSL {
   }
   
   
-  def StartCode(code:String) : ArrayBuffer[Int] = {
-
+  def StartCode(inputCode:String) : ArrayBuffer[Int] = {
+    code = inputCode
     val hashMap : collection.mutable.HashMap[Char, Int] = parseFrequencies(code)
     val minHeap : collection.mutable.PriorityQueue[(Int, Node)] = buildHeap(hashMap)
     val root : Node = buildTree(minHeap)
@@ -160,10 +161,18 @@ class backgroundmusicDSL {
 
   def EndCode(): Unit = {
     // hand nick a list of frequencies in an array
-    //val hashMap : collection.mutable.HashMap[Char, Int] = parseFrequencies(code)
-    //buildFrequencyRanking(hashMap) // Transforms it into a ranking not an absolute
-//    InterpretCode(0, code)
-  
+    val hashMap : collection.mutable.HashMap[Char, Int] = parseFrequencies(code)
+    val freqArr : ArrayBuffer[Int] = buildFrequencyArr(hashMap)
+    InterpretCode(0, freqArr, 1)
+  }
+
+  def buildFrequencyArr(map : collection.mutable.HashMap[Char, Int]) : ArrayBuffer[Int] = {
+    var freqArr = ArrayBuffer[Int]()
+    for (x <- map.keySet.iterator) {
+      val value : Int = map(x)
+      freqArr += value
+    }
+    freqArr.sorted
   }
   
   def buildFrequencyRanking(map : HashMap[Char, Int]) : Unit = {

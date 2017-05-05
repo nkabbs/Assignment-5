@@ -11,39 +11,126 @@ import scala.language.{dynamics, implicitConversions}
 import scala.util.Random
 import collection.mutable.HashMap
 
+
 class backgroundmusicDSL {
-  def hello : String = "Hello World!"
-  val random = new Random 
   
-  var numSequences = 10
-  val numKeys = 5
+  val random = new Random //used for generating sample songs not based on specific encoding
   
-  val interps = new Array[interpreter](numKeys)
+  var numSequences = 10  //number of available tracks to write on. can't be changed
+  val numInterpreters = 10  //== numInterpreters
+  
+  val interps = new Array[interpreter](numInterpreters)  //interps is just a list of interpreters, but named interps so interpreters can be used as a word in the DSL
+  
   val s = new Array[Sequence](numSequences)
   val t = new Array[Track](numSequences)
-  val curr = 0
-  var currInt = 0
-  var code = ""
+  
+  var currTrack = 0  //used for storing current track that the music is writing to
+  var firstTrack = 0  //used for storing first track number to be initialized
+  var c = new ArrayBuffer[Int]()  //used for storing current code that can be interpreted on tracks
   
   var sequencer : Sequencer = MidiSystem.getSequencer()
-  
   
     /* INTERPRETER KEY:
      * 0) Major
      * 1) Minor
-     * 2) Lydian
-     * 3) Dorian (Medieval)
-     * 4) Middle-Eastern (happy)
+     * 2) Middle-Eastern (happy)
+     * 3) Lydian 
+     * 4) Dorian
+     * 5) Messy
+     * 6) WholeStep
+     * 7) Blues
+     * 8) PentatonicMajor
+     * 9) PentatonicMinor
      */
+  
+  object Play {
+    def track(i : Int) = {
+      PlaySong(i)
+    }
+  }
+  
+  object Save {
+    def track(i : Int) = {
+      currTrack = i
+      trackSaver
+    }
+  }
+  
+  object trackSaver {
+    def as(s : String) {
+      SaveSong(currTrack, s)
+    }
+  }
+  
+  object Initialize extends Dynamic {
+    var num = 0
+    def apply(num : Int) = {
+      numSequences = num
+    }
+    
+    
+    def tracks(i : Int) = {
+      firstTrack = i
+      trackInitializer
+      
+    }
+    
+    def the(v : interpretersWord) = InitializeInterpreters
+    
+  }
+  
+  object trackInitializer {
+    def to(lastTrack: Int)  {
+      for (i <- firstTrack to lastTrack) {
+          s(i) = new Sequence(Sequence.PPQ, 1)
+          t(i) = s(i).createTrack()
+        }
+    }
+  }
+  
+  object Interpret {
+    def code(co : ArrayBuffer[Int]) = {
+      c = co
+      TrackGetter
+    }
+  }
+  
+  object TrackGetter {
+    def on(i : Int) = {
+      currTrack = i
+      InterpreterGetter
+    }
+  }
+  
+  object InterpreterGetter {
+    def through(i : Int) {
+      InterpretCode(i, c, currTrack)
+    }
+  }
+  
+  object Compress {
+    def code(s : String) = {
+      StartCode(s)
+    }
+  }
+  
+  object Wait {
+    def until(d : inputWord) {
+      Console.readLine()
+    }
+  }
+  
   
   def InitializeInterpreters() {
     var i = 0
-    for (i <- 0 until numKeys) {
+    for (i <- 0 until numInterpreters) {
       interps(i) = new interpreter
       interps(i).initializeInterpreter(i)
+      print (i)
     }
   }
-
+  
+  //Function that turns encoded music file into real MIDI file
   def InterpretCode(interNum: Int, code: ArrayBuffer[Int], trackNum : Int) {  //code passed in is frequency distribution
     var i = 0
     var j = 0
@@ -51,42 +138,39 @@ class backgroundmusicDSL {
     val inter = interps(interNum)
     var notes = new ArrayBuffer[Int]
     for (i <- 0 to code.size - 1) {
-      notes = inter.getNotes(code(i))._2  
-      print("code: " + code(i))
-      print("  notes: ")
-      for (j <- 0 to notes.size - 1) { 
-        print(notes(j) + " ")
-         GenerateNote(50 + notes(j),count,inter.getNotes(code(i))._1,100, trackNum)
+      notes = inter.getNotes(code(i))._2  //getNotes()._1 gets the list of notes played (since past the first 15 characters there can be multiple)
+      println(notes(0))
+      for (j <- 0 to notes.size - 1) { //loops through all notes to be played simultaneously
+         GenerateNote(50 + notes(j),count,inter.getNotes(code(i))._1,100, trackNum) 
       }
-     println()
-      count += inter.getNotes(code(i))._1  
+      count += inter.getNotes(code(i))._1  //getNotes()._1 gets the duration of the notes
     }
   }
   
-  def BeginNote(msg: ShortMessage, start: Int, note: Int, volume: Int, track : Int) {
-        msg.setMessage(ShortMessage.NOTE_ON,0,note,volume)
-        var event = new MidiEvent(msg,start)
+  def BeginNote(msg: ShortMessage, begin: Int, pitch: Int, volume: Int, track : Int) {
+        msg.setMessage(ShortMessage.NOTE_ON,0,pitch,volume)
+        var event = new MidiEvent(msg,begin)
         t(track).add(event)
   }
   
-  def EndNote(msg: ShortMessage, note: Int, end: Int, track : Int) {
-        msg.setMessage(ShortMessage.NOTE_OFF,0,note)
+  def EndNote(msg: ShortMessage, pitch: Int, end: Int, track : Int) {
+        msg.setMessage(ShortMessage.NOTE_OFF,0,pitch)
         var event = new MidiEvent(msg, end)
         t(track).add(event)
   }
   
-  def GenerateNote(note: Int, start: Int, duration: Int, volume: Int, track : Int) {
+  def GenerateNote(pitch: Int, begin: Int, noteLength: Int, volume: Int, track : Int) {
         
         var beg = new ShortMessage()
-        BeginNote(beg, start, note, volume, track)
+        BeginNote(beg, begin, pitch, volume, track)
 
         var end = new ShortMessage()
-        EndNote(end, note, start + duration, track)
+        EndNote(end, pitch, begin + noteLength, track)
   }
   
   def BeginSequence(x : Int) {
       sequencer.open()
-      sequencer.setTempoFactor(20)
+      sequencer.setTempoFactor(2)
       sequencer.setSequence(s(x))
       sequencer.start()
   }
@@ -97,19 +181,19 @@ class backgroundmusicDSL {
   
   def PlaySong(x : Int) {
       BeginSequence(x)
+      print("here")
       while(sequencer.isRunning()){
-        Thread.sleep(2000)
+        Thread.sleep(2000)  //Sleep count added so that sequence doesn't end before song is played
       }
       EndSequence
   }
   
-  def SaveSong() {
-     val song = new File("song.midi")
-     MidiSystem.write(s(curr), 0, song)
+  def SaveSong(seq : Int, fileName : String) {
+     val song = new File(fileName)
+     MidiSystem.write(s(seq), 0, song)
    }
   
-  def MakeSong() {
-    // We'll need to edit this method heavily once we add the interpreters/clarify the structure
+  def MakeSong(tr : Int)  {  //generates a random distribution of 3 possible notes. Only used for testing
     var i = 0
     var numNotes = 30
     var x = 0
@@ -118,10 +202,11 @@ class backgroundmusicDSL {
       var start = random.nextInt(numNotes) + i
       var duration = random.nextInt(numNotes - start) + 1
       var volume = 100
-      GenerateNote(note, start, duration, volume, 0)
+      GenerateNote(note, start, duration, volume, tr)
     }
   }
 
+  //creates the encoded song file from frequency array and the original code
   def generateSongCode(code : String, map : HashMap[Char, Int]) : ArrayBuffer[Int] = {
     var i = 0
     var songCode = new ArrayBuffer[Int]
@@ -131,6 +216,7 @@ class backgroundmusicDSL {
     return songCode
   }
   
+  //maps each character to the number of its occurrences
   def buildFrequencyArr(map : collection.mutable.HashMap[Char, Int]) : ArrayBuffer[Int] = {
     var freqArr = ArrayBuffer[Int]()
     for (x <- map.keySet.iterator) {
@@ -141,8 +227,9 @@ class backgroundmusicDSL {
   }
   
   
-  def StartCode(inputCode:String) : ArrayBuffer[Int] = {
-    code = inputCode
+  //Simultaneously compresses code and creates encoded music file
+  def StartCode(code:String) : ArrayBuffer[Int] = {
+
     val hashMap : collection.mutable.HashMap[Char, Int] = parseFrequencies(code)
     val minHeap : collection.mutable.PriorityQueue[(Int, Node)] = buildHeap(hashMap)
     val root : Node = buildTree(minHeap)
@@ -155,26 +242,10 @@ class backgroundmusicDSL {
     bos.write(byteArray)
     bos.close()
     buildFrequencyRanking(hashMap)
-    return generateSongCode(code, hashMap);
-  }
-
-
-  def EndCode(): Unit = {
-    // hand nick a list of frequencies in an array
-    val hashMap : collection.mutable.HashMap[Char, Int] = parseFrequencies(code)
-    val freqArr : ArrayBuffer[Int] = buildFrequencyArr(hashMap)
-    InterpretCode(0, freqArr, 1)
-  }
-
-  def buildFrequencyArr(map : collection.mutable.HashMap[Char, Int]) : ArrayBuffer[Int] = {
-    var freqArr = ArrayBuffer[Int]()
-    for (x <- map.keySet.iterator) {
-      val value : Int = map(x)
-      freqArr += value
-    }
-    freqArr.sorted
+    return generateSongCode(code, hashMap);  //returns encoded music file to be interpreted after compression
   }
   
+  //ranks frequencies for purpose of Huffman coding and music encoding
   def buildFrequencyRanking(map : HashMap[Char, Int]) : Unit = {
     val maxHeap = collection.mutable.PriorityQueue.empty(Ordering.by((_: (Int, Char))._1))
     for (x <- map.keySet.iterator) {
@@ -189,47 +260,6 @@ class backgroundmusicDSL {
     }
   }
   
-  
-  object Initialize extends Dynamic {
-    var num = 0
-    def apply(num : Int) = {
-      numSequences = num
-    }
-    
-    
-    def tracks(i : Int) = {
-      currInt = i
-      trackInitializer
-      
-    }
-    
-    def the(v : interpretersWord) = InitializeInterpreters
-    
-  }
-  
-  object trackInitializer {
-    def to(j: Int)  {
-      
-    for (i <- currInt to j) {
-        s(i) = new Sequence(Sequence.PPQ, 1)
-        t(i) = s(i).createTrack()
-      }
-    }
-  }
-  
-
-  
-  object KeyGetter {
-    def as(s : String) {
-      if (s.equals("major")) {
-        interps(0).initializeInterpreter(0)
-      } else if (s.equals("minor")) {
-        interps(0).initializeInterpreter(1)
-      } else if (s.equals("lydian")) {
-        interps(0).initializeInterpreter(2)
-      }
-    }
-  }
   
   def parseFrequencies(code: String): collection.mutable.HashMap[Char,Int] = {
 
@@ -357,8 +387,5 @@ class backgroundmusicDSL {
       printTree(n.r_node)
     }
   }
-
-
-
   
 }

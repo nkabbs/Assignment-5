@@ -1,6 +1,5 @@
 package words
 
-object words {
   
     abstract sealed class aWord
     object a extends aWord
@@ -14,23 +13,23 @@ object words {
     abstract sealed class sequencesWord
     object sequences extends sequencesWord
     
+    abstract sealed class inputWord
+    object input extends inputWord
+    
     abstract sealed class anWord
     object an extends anWord
     
-    abstract sealed class interpreterWord
-    object interpreter extends interpreterWord
+    abstract sealed class interpretersWord
+    object interpreters extends interpretersWord
     
     abstract sealed class usingWord
     object using extends usingWord
     
     abstract sealed class theWord
     object the extends theWord
-    
-    //notes from characters song on track as  
   
     abstract sealed class distributionWord
     object distribution extends distributionWord
-    
 
     abstract sealed class notesWord
     object notes extends notesWord
@@ -52,11 +51,6 @@ object words {
     
     abstract sealed class asWord
     object as extends asWord
-    
-    
-    
-    //distribution with notes from characters song on track as  
   
     
     
-}

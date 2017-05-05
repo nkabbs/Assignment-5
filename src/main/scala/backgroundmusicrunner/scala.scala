@@ -7,39 +7,63 @@ import words._
 object backgroundmusicrunner extends backgroundmusicDSL {
   def main(args: Array[String]): Unit = {
     
-    var x = StartCode(
-       "var x = 0; x += 23; return x"
-    )
-    //Convert x into song Example
+    var x = Compress code "var x = 0; x += 23; print x"
     
     Initialize the interpreters
-    Initialize tracks 0 to 4
+    Initialize tracks 0 to 9
     
-    InterpretCode(0, x, 0)
-    PlaySong(0)
-    Console.readLine()
-    InterpretCode(1, x, 1)
-    //Interpret x on 0 using major
-    PlaySong(1)
-    Console.readLine()
-    InterpretCode(2, x, 2)
-    PlaySong(2)
+    Interpret code x on 0 through 0
+    Play track 0
     
-    //Play 0
-    //PlaySong
-    //Interpret "example" using major on track 0
-    //Interpret "example" using minor on track 1
-    //Interpret "example" using lydian on track 2
-    //...
+    Wait until input
     
-    //Play 8 seconds of tracks 0 to 2 
-    //favorite = userInput
-    //Save track favorite as "sample.midi"
+    Interpret code x on 1 through 1
+    Play track 1
     
+    Wait until input
     
-    //PlaySong
-    //SaveSong
-    println("all done")
+    Interpret code x on 2 through 2
+    Play track 2
+    
+    Wait until input
+    
+    Interpret code x on 3 through 3
+    Play track 3
+    
+    Wait until input
+    
+    Interpret code x on 4 through 4
+    Play track 4
+    
+    Wait until input
+    
+    Interpret code x on 5 through 5
+    Play track 5
+    
+    Wait until input
+    
+    Interpret code x on 6 through 6
+    Play track 6
+    
+    Wait until input
+    
+    Interpret code x on 7 through 7
+    Play track 7
+    
+    Wait until input
+    
+    Interpret code x on 8 through 8
+    Play track 8
+    
+    Wait until input
+    
+    Interpret code x on 9 through 9
+    Play track 9
+    
+    var choice : Int = Console.readInt
+    
+    Save track 8 as "example.midi"
+    
     
   }
 }
